@@ -20,11 +20,11 @@ from __future__ import print_function
 
 import os
 import sys
-
+import numpy as np
 import tensorflow as tf  # pylint: disable=g-bad-import-order
 
-from official.resnet import resnet_model
-from official.resnet import resnet_run_loop
+import resnet_model
+import resnet_run_loop
 
 _LENGTH = 6812
 _NUM_CHANNELS = 3
@@ -59,11 +59,14 @@ def parse_record(raw_record, is_training):
     feature = {}
     feature["label"] = tf.FixedLenFeature([], dtype=tf.int64)
     fs = list(map(lambda x:'feature'+str(x),range(1,6813)))
-    for i in range(len(_LENGTH)):
+    for i in range(_LENGTH):
         feature[fs[i]] = tf.FixedLenFeature([], dtype=tf.float32)
     features = tf.parse_single_example(raw_record, feature)
-
-    imageFeature = [features['feature%d' % (i + 1)] for i in range(_LENGTH)]
+    imageF = []
+    for i in range(_LENGTH):
+        imageF.append(features['feature%d' % (i + 1)])
+    print(len(imageF))
+    imageFeature = tf.constant(imageF,shape=[1,6812])
     label = tf.one_hot(features['label'], _NUM_CLASSES)
     return imageFeature, label
 
@@ -196,8 +199,7 @@ def main(argv):
   input_function = flags.use_synthetic_data and get_synth_input_fn() or input_fn
 
   resnet_run_loop.resnet_main(
-      flags, cifar10_model_fn, input_function,
-      shape=[_LENGTH, _NUM_CHANNELS])
+      flags, cifar10_model_fn, input_function)
 # check shape of resnet_main
 
 if __name__ == '__main__':
